@@ -64,7 +64,7 @@ export default function App() {
     <div className="app">
       <header>
         <h1>Todo</h1>
-        <button onClick={() => setShowModal(true)}>Logout</button>
+        <button className='logout-btn' onClick={() => setShowModal(true)}>Logout</button>
       </header>
 
       <form onSubmit={addTask}>

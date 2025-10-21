@@ -1,34 +1,40 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const db = require('../db');
+const User = require('../models/UserModel');
+
 const router = express.Router();
+const SECRET = process.env.JWT_SECRET;
 
-const SECRET = process.env.JWT_SECRET || 'your_secret_key';
-const SALT_ROUNDS = 10;
+// Signup
+router.post('/signup', async (req, res) => {
+  try {
+    const { username, password, email } = req.body;
+    const existingUser = await User.findByUsername(username);
+    if (existingUser) return res.status(400).json({ message: 'Username exists' });
 
-router.post('/signup', (req, res) => {
-  const { username, password } = req.body;
-  bcrypt.hash(password, SALT_ROUNDS, (err, hash) => {
-    if (err) return res.status(500).json({ message: 'Error hashing' });
-    db.run('INSERT INTO users (username, password_hash) VALUES (?, ?)', [username, hash], function (err) {
-      if (err) return res.status(400).json({ message: 'Username exists' });
-      const token = jwt.sign({ id: this.lastID, username }, SECRET, { expiresIn: '7d' });
-      res.json({ token });
-    });
-  });
+    const newUser = await User.create(username, password, email);
+    const token = jwt.sign({ id: newUser.id, username: newUser.username }, SECRET, { expiresIn: '24h' });
+    res.json({ token });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
-router.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
-    if (!row) return res.status(400).json({ message: 'Invalid credentials' });
-    bcrypt.compare(password, row.password_hash, (err, ok) => {
-      if (!ok) return res.status(400).json({ message: 'Invalid credentials' });
-      const token = jwt.sign({ id: row.id, username }, SECRET, { expiresIn: '7d' });
-      res.json({ token });
-    });
-  });
+// Login
+router.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findByUsername(username);
+    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+
+    const valid = await User.verifyPassword(password, user.password_hash);
+    if (!valid) return res.status(400).json({ message: 'Invalid credentials' });
+
+    const token = jwt.sign({ id: user.id, username: user.username }, SECRET, { expiresIn: '24h' });
+    res.json({ token });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 module.exports = router;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 export default function TaskItem({ task, onDelete, onToggle, onEdit }) {
   const [editing, setEditing] = useState(false);

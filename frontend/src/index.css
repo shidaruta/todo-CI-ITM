@@ -5,7 +5,8 @@ body {
 }
 
 .app {
-  max-width: 500px;
+  max-width: 750px;
+  
   margin: 50px auto;
   padding: 20px;
   background-color: #fff;
@@ -33,17 +34,20 @@ header button {
   border-radius: 6px;
   cursor: pointer;
 }
-
+form{
+  gap: 100px;
+}
 form input {
   padding: 10px;
   margin-right: 10px;
   border: 1px solid #ccc;
   border-radius: 8px;
-  width: calc(100% - 100px);
+  width: calc(100% - 120px);
 }
 
 form button {
-  padding: 10px 15px;
+  min-width: 70px;
+  padding: 12px;
   border: none;
   background: #3498db;
   color: white;
@@ -77,14 +81,21 @@ form button {
 
 .task button {
   margin-left: 6px;
+  min-width: 70px;
   padding: 4px 8px;
   border-radius: 6px;
   border: none;
   cursor: pointer;
 }
-
+.auth-container{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
 .auth {
-  max-width: 400px;
+  display: flex;
+  flex-direction: column;
   margin: 80px auto;
   padding: 25px;
   background: #fff;
@@ -99,7 +110,8 @@ form button {
 
 .auth input {
   display: block;
-  width: 95%;
+  min-width: 500px;
+  height: 30px;
   margin-bottom: 12px;
   padding: 10px;
   border-radius: 8px;
@@ -126,4 +138,8 @@ form button {
   color: #3498db;
   border: none;
   cursor: pointer;
+}
+
+.logout-btn{
+  padding: 12px;
 }

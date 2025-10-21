@@ -40,3 +40,9 @@
 .read-the-docs {
   color: #888;
 }
+
+.auth-container{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

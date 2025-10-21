@@ -8,10 +8,6 @@ backend/node_modules/
 backend/.env
 frontend/.env
 
-env/
-.venv/
-venv/
-backend/env/
 # ===== Logs =====
 *.log
 npm-debug.log*
