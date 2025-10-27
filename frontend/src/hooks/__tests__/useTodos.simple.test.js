@@ -18,7 +18,7 @@ describe('useTodos Hook - Simple Tests', () => {
     });
 
     // Mock fetch
-    global.fetch = jest.fn(() =>
+    window.fetch = jest.fn(() =>
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve([])

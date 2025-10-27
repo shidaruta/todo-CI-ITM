@@ -1,7 +1,7 @@
-const React = require('react');
-const { render, screen, fireEvent } = require('@testing-library/react');
-require('@testing-library/jest-dom');
-const AuthForm = require('../AuthForm').default;
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import AuthForm from '../AuthForm';
 
 describe('AuthForm Component', () => {
   const mockOnAuth = jest.fn();
@@ -36,7 +36,7 @@ describe('AuthForm Component', () => {
 
   it('shows error message when authentication fails', async () => {
     // Mock fetch to return an error
-    global.fetch = jest.fn().mockResolvedValue({
+    window.fetch = jest.fn().mockResolvedValue({
       ok: false,
       json: () => Promise.resolve({ message: 'Authentication failed' })
     });

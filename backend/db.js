@@ -83,7 +83,7 @@ db.serialize(() => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER,
       text TEXT,
-      completed INTEGER DEFAULT 0,
+      done INTEGER DEFAULT 0,
       FOREIGN KEY(user_id) REFERENCES users(id)
     )
   `);
