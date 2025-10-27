@@ -3,11 +3,13 @@ const bcrypt = require('bcrypt');
 
 const SALT_ROUNDS = 10;
 
+
 const UserModel = {
   create: async (username, password, email) => {
-    return new Promise((resolve, reject) => {
-      bcrypt.hash(password, SALT_ROUNDS, (err, hash) => {
-        if (err) return reject(err);
+    return new Promise(async (resolve, reject) => {
+      try {
+        const hash = await bcrypt.hash(password, SALT_ROUNDS);
+        
         db.run(
           'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
           [username, email, hash],
@@ -16,7 +18,9 @@ const UserModel = {
             resolve({ id: this.lastID, username, email });
           }
         );
-      });
+      } catch (err) {
+        reject(err);
+      }
     });
   },
 

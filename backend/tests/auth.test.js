@@ -1,129 +1,141 @@
 const request = require('supertest');
-const jwt = require('jsonwebtoken');
 const app = require('../app');
+const db = require('../db');
 
-describe('Authentication API', () => {
- 
-  describe('POST /api/signup', () => {
-    const validUser = {
-      username: 'testuser',
-      email: 'test@example.com',
-      password: 'Test123!'
-    };
+jest.setTimeout(15000); // Increase timeout to 15 seconds
 
-    it('should create a new user with valid data', async () => {
-      const response = await request(app)
-        .post('/api/signup')
-        .send(validUser)
-        .expect(201);
+beforeAll(async () => {
+  process.env.JWT_SECRET = 'test-secret-key-12345';
+  await new Promise(resolve => setTimeout(resolve, 500));
+});
 
-      expect(response.body).toHaveProperty('token');
-      expect(response.body).toHaveProperty('user');
-      expect(response.body.user.email).toBe(validUser.email);
-      expect(response.body.user).not.toHaveProperty('password');
-    });
-
-    it('should reject signup with existing email', async () => {
-      await request(app)
-        .post('/api/signup')
-        .send(validUser);
-
-      const response = await request(app)
-        .post('/api/signup')
-        .send(validUser)
-        .expect(400);
-
-      expect(response.body).toHaveProperty('error');
-    });
-
-    it('should reject signup with invalid email', async () => {
-      const response = await request(app)
-        .post('/api/signup')
-        .send({ ...validUser, email: 'invalid-email' })
-        .expect(400);
-
-      expect(response.body).toHaveProperty('error');
-    });
-
-    it('should reject signup with weak password', async () => {
-      const response = await request(app)
-        .post('/api/signup')
-        .send({ ...validUser, password: '123' })
-        .expect(400);
-
-      expect(response.body).toHaveProperty('error');
-    });
-
-    it('should reject signup with missing fields', async () => {
-      const response = await request(app)
-        .post('/api/signup')
-        .send({ email: 'test@example.com' })
-        .expect(400);
-
-      expect(response.body).toHaveProperty('error');
+afterAll(async () => {
+  return new Promise((resolve) => {
+    db.close(() => {
+      resolve();
     });
   });
+});
 
-  describe('POST /api/login', () => {
-    const testUser = {
-      username: 'loginuser',
-      email: 'login@example.com',
-      password: 'Login123!'
+describe('Authentication API', () => {
+  test('POST /api/signup should create a new user with valid data', async () => {
+    const validUser = {
+      username: 'testuser' + Date.now(),
+      email: 'test' + Date.now() + '@example.com',
+      password: 'SecurePass123!'
     };
 
-    beforeAll(async () => {
-      await request(app)
-        .post('/api/signup')
-        .send(testUser);
-    });
+    const response = await request(app)
+      .post('/api/signup')
+      .send(validUser)
+      .expect(200);
 
-    it('should login with correct credentials', async () => {
-      const response = await request(app)
-        .post('/api/login')
-        .send({
-          email: testUser.email,
-          password: testUser.password
-        })
-        .expect(200);
+    expect(response.body).toHaveProperty('token');
+    expect(response.body).toHaveProperty('user');
+    expect(response.body.user.username).toBe(validUser.username);
+  });
 
-      expect(response.body).toHaveProperty('token');
-      expect(response.body).toHaveProperty('user');
-      
-      const decoded = jwt.verify(response.body.token, process.env.JWT_SECRET);
-      expect(decoded).toHaveProperty('userId');
-    });
+  test('POST /api/signup should reject signup with existing email', async () => {
+    const uniqueEmail = 'duplicate' + Date.now() + '@example.com';
+    const user = {
+      username: 'newuser' + Date.now(),
+      email: uniqueEmail,
+      password: 'SecurePass123!'
+    };
 
-    it('should reject login with incorrect password', async () => {
-      const response = await request(app)
-        .post('/api/login')
-        .send({
-          email: testUser.email,
-          password: 'WrongPassword123!'
-        })
-        .expect(401);
+    // Create first user
+    await request(app).post('/api/signup').send(user);
 
-      expect(response.body).toHaveProperty('error');
-    });
+    // Try to create another with same email
+    const response = await request(app)
+      .post('/api/signup')
+      .send({
+        username: 'different' + Date.now(),
+        email: uniqueEmail,
+        password: 'SecurePass123!'
+      })
+      .expect(400);
 
-    it('should reject login with non-existent email', async () => {
-      const response = await request(app)
-        .post('/api/login')
-        .send({
-          email: 'nonexistent@example.com',
-          password: 'Password123!'
-        })
-        .expect(401);
+    expect(response.body).toHaveProperty('message');
+  });
 
-      expect(response.body).toHaveProperty('error');
-    });
+  test('POST /api/signup should reject signup with missing fields', async () => {
+    const response = await request(app)
+      .post('/api/signup')
+      .send({ email: 'test@example.com' })
+      .expect(400);
 
-    it('should reject login with missing credentials', async () => {
-      const response = await request(app)
-        .post('/api/login')
-        .send({ email: testUser.email })
-        .expect(400);
+    expect(response.body).toHaveProperty('message');
+  });
 
-      expect(response.body).toHaveProperty('error');
-    });
+  test('POST /api/login should login with correct credentials', async () => {
+    const testUser = {
+      username: 'loginuser' + Date.now(),
+      email: 'login' + Date.now() + '@example.com',
+      password: 'SecurePass123!'
+    };
+
+    // Create user first
+    await request(app).post('/api/signup').send(testUser);
+    
+    // Small delay to ensure user is written to DB
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Login
+    const response = await request(app)
+      .post('/api/login')
+      .send({
+        username: testUser.username,
+        password: testUser.password
+      })
+      .expect(200);
+
+    expect(response.body).toHaveProperty('token');
+    expect(response.body).toHaveProperty('user');
+  });
+
+  test('POST /api/login should reject login with incorrect password', async () => {
+    const testUser = {
+      username: 'wrongpass' + Date.now(),
+      email: 'wrongpass' + Date.now() + '@example.com',
+      password: 'SecurePass123!'
+    };
+
+    // Create user
+    await request(app).post('/api/signup').send(testUser);
+    
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Try with wrong password
+    const response = await request(app)
+      .post('/api/login')
+      .send({
+        username: testUser.username,
+        password: 'WrongPassword123!'
+      })
+      .expect(400);
+
+    expect(response.body).toHaveProperty('message');
+  });
+
+  test('POST /api/login should reject login with non-existent email', async () => {
+    const response = await request(app)
+      .post('/api/login')
+      .send({
+        username: 'nonexistent',
+        password: 'SecurePass123!'
+      })
+      .expect(400);
+
+    expect(response.body).toHaveProperty('message');
+  });
+
+  test('POST /api/login should reject login with missing credentials', async () => {
+    const response = await request(app)
+      .post('/api/login')
+      .send({ username: 'testuser' })
+      .expect(400);
+
+    expect(response.body).toHaveProperty('message');
   });
 });

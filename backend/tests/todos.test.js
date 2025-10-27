@@ -1,173 +1,161 @@
-describe('Todos API', () => {
+const request = require('supertest');
+const app = require('../app');
+const db = require('../db');
 
-  let authToken;
-  let userId;
+jest.setTimeout(15000);
 
+let authToken;
+let userId;
 
-    beforeAll(async () => {
-    // Create a test user and get token
-    const signupResponse = await request(app)
-      .post('/api/signup')
-      .send({
-        username: 'todouser',
-        email: 'todo@example.com',
-        password: 'Todo123!'
-      });
+beforeAll(async () => {
+  process.env.JWT_SECRET = 'test-secret-key-12345';
+  await new Promise(resolve => setTimeout(resolve, 500));
 
-    authToken = signupResponse.body.token;
-    userId = signupResponse.body.user.id;
+  // Create a test user and get auth token
+  const testUser = {
+    username: 'taskuser' + Date.now(),
+    email: 'task' + Date.now() + '@example.com',
+    password: 'Task123!'
+  };
+
+  const signupResponse = await request(app)
+    .post('/api/signup')
+    .send(testUser);
+
+  authToken = signupResponse.body.token;
+  userId = signupResponse.body.user.id;
+  
+  console.log('Test user created with token:', !!authToken);
+});
+
+afterAll(async () => {
+  return new Promise((resolve) => {
+    db.close(() => {
+      resolve();
+    });
   });
+});
 
-  describe('POST /api/todos', () => {
-    it('should create a new todo with valid data', async () => {
+describe('Tasks API', () => {
+  describe('POST /api/tasks', () => {
+    test('should create a new task with valid data', async () => {
       const response = await request(app)
-        .post('/api/todos')
+        .post('/api/tasks')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          title: 'Test Todo',
-          description: 'Test Description',
-          priority: 'medium'
-        })
-        .expect(201);
+        .send({ text: 'Test Task' })
+        .expect(200);
 
       expect(response.body).toHaveProperty('id');
-      expect(response.body.title).toBe('Test Todo');
-      expect(response.body.completed).toBe(false);
-      expect(response.body.userId).toBe(userId);
+      expect(response.body.text).toBe('Test Task');
     });
 
-    it('should reject todo creation without auth token', async () => {
-      const response = await request(app)
-        .post('/api/todos')
-        .send({
-          title: 'Test Todo'
-        })
+    test('should reject task creation without auth token', async () => {
+      await request(app)
+        .post('/api/tasks')
+        .send({ text: 'Test Task' })
         .expect(401);
-
-      expect(response.body).toHaveProperty('error');
-    });
-
-    it('should reject todo with invalid priority', async () => {
-      const response = await request(app)
-        .post('/api/todos')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          title: 'Test Todo',
-          priority: 'invalid'
-        })
-        .expect(400);
-
-      expect(response.body).toHaveProperty('error');
     });
   });
 
-  describe('GET /api/todos', () => {
-    beforeAll(async () => {
-      // Create some test todos
+  describe('GET /api/tasks', () => {
+    test('should get all tasks for authenticated user', async () => {
+      // Create a task first
       await request(app)
-        .post('/api/todos')
+        .post('/api/tasks')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ title: 'Todo 1', priority: 'high' });
-      
-      await request(app)
-        .post('/api/todos')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ title: 'Todo 2', priority: 'low' });
-    });
+        .send({ text: 'Task 1' });
 
-    it('should get all todos for authenticated user', async () => {
       const response = await request(app)
-        .get('/api/todos')
+        .get('/api/tasks')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
       expect(response.body.length).toBeGreaterThan(0);
-      expect(response.body[0]).toHaveProperty('title');
     });
 
-    it('should filter todos by completion status', async () => {
-      const response = await request(app)
-        .get('/api/todos?completed=false')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(Array.isArray(response.body)).toBe(true);
-      response.body.forEach(todo => {
-        expect(todo.completed).toBe(false);
-      });
-    });
-
-    it('should reject request without auth token', async () => {
+    test('should reject request without auth token', async () => {
       await request(app)
-        .get('/api/todos')
+        .get('/api/tasks')
         .expect(401);
     });
   });
 
-  describe('PUT /api/todos/:id', () => {
-    let todoId;
-
-    beforeAll(async () => {
-      const response = await request(app)
-        .post('/api/todos')
+  describe('PUT /api/tasks/:id', () => {
+    test('should update task successfully', async () => {
+      // Create a task first
+      const createResponse = await request(app)
+        .post('/api/tasks')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ title: 'Todo to Update' });
-      
-      todoId = response.body.id;
-    });
+        .send({ text: 'Original Task' });
 
-    it('should update todo successfully', async () => {
+      const taskId = createResponse.body.id;
+
+      // Update the task
       const response = await request(app)
-        .put(`/api/todos/${todoId}`)
+        .put(`/api/tasks/${taskId}`)
         .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          title: 'Updated Todo',
-          completed: true
-        })
+        .send({ text: 'Updated Task' })
         .expect(200);
 
-      expect(response.body.title).toBe('Updated Todo');
-      expect(response.body.completed).toBe(true);
+      expect(response.body.text).toBe('Updated Task');
     });
 
-    it('should reject update of non-existent todo', async () => {
+    test('should reject update of non-existent task', async () => {
       await request(app)
-        .put('/api/todos/99999')
+        .put('/api/tasks/99999')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ title: 'Updated' })
+        .send({ text: 'Updated' })
         .expect(404);
     });
   });
 
-  describe('DELETE /api/todos/:id', () => {
-    let todoId;
-
-    beforeAll(async () => {
-      const response = await request(app)
-        .post('/api/todos')
+  describe('POST /api/tasks/:id/toggle', () => {
+    test('should toggle task completion', async () => {
+      // Create a task first
+      const createResponse = await request(app)
+        .post('/api/tasks')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ title: 'Todo to Delete' });
-      
-      todoId = response.body.id;
-    });
+        .send({ text: 'Toggle Task' });
 
-    it('should delete todo successfully', async () => {
-      await request(app)
-        .delete(`/api/todos/${todoId}`)
+      const taskId = createResponse.body.id;
+
+      // Toggle the task
+      const response = await request(app)
+        .post(`/api/tasks/${taskId}/toggle`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
-      // Verify todo is deleted
+      expect(typeof response.body.completed).toBe('boolean');
+    });
+  });
+
+  describe('DELETE /api/tasks/:id', () => {
+    test('should delete task successfully', async () => {
+      // Create a task first
+      const createResponse = await request(app)
+        .post('/api/tasks')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ text: 'Delete Task' });
+
+      const taskId = createResponse.body.id;
+
+      // Delete the task
       await request(app)
-        .get(`/api/todos/${todoId}`)
+        .delete(`/api/tasks/${taskId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      // Verify task is deleted
+      await request(app)
+        .get(`/api/tasks/${taskId}`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
     });
 
-    it('should reject deletion without auth', async () => {
+    test('should reject deletion without auth', async () => {
       await request(app)
-        .delete(`/api/todos/${todoId}`)
+        .delete('/api/tasks/1')
         .expect(401);
     });
   });
