@@ -18,6 +18,10 @@ export default defineConfig([
       globals: {
         ...globals.browser,
         ...globals.jest,
+        render: true,
+        fireEvent: true,
+        screen: true,
+        cleanup: true,
       },
       parserOptions: {
         ecmaVersion: 'latest',
