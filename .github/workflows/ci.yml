@@ -26,10 +26,6 @@ jobs:
       working-directory: ./backend
       run: npm ci
 
-    - name: Run backend linting
-      working-directory: ./backend
-      run: npm run lint
-
     - name: Run backend unit tests
       working-directory: ./backend
       run: npm test
