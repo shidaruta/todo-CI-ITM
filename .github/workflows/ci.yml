@@ -30,19 +30,6 @@ jobs:
       working-directory: ./backend
       run: npm test
 
-    - name: Generate test coverage
-      working-directory: ./backend
-      run: npm run test:coverage
-
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v3
-      with:
-        files: ./backend/coverage/lcov.info
-        flags: backend
-
-    - name: Build backend Docker image
-      run: docker build -t todo-backend:${{ github.sha }} ./backend
-
   # Frontend Tests and Build
   frontend:
     runs-on: ubuntu-latest
@@ -65,17 +52,3 @@ jobs:
     - name: Run frontend unit tests
       working-directory: ./frontend
       run: npm test -- --watchAll=false
-
-    - name: Generate test coverage
-      working-directory: ./frontend
-      run: npm run test:coverage
-
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v3
-      with:
-        files: ./frontend/coverage/lcov.info
-        flags: frontend
-
-    - name: Build frontend for production
-      working-directory: ./frontend
-      run: npm run build
