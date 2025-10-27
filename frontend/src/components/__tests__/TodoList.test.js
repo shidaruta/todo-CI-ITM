@@ -38,9 +38,10 @@ describe('TodoList Component', () => {
   });
 
   it('filters completed todos', () => {
-    const { rerender } = render(
-      <TodoList todos={mockTodos} filter="completed" {...mockHandlers} />
+    const { rerender: _rerender } = render(
+  <TodoList todos={mockTodos} filter="completed" {...mockHandlers} />
     );
+
     
     expect(screen.getByText('Todo 2')).toBeInTheDocument();
     expect(screen.queryByText('Todo 1')).not.toBeInTheDocument();

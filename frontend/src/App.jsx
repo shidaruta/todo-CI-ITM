@@ -10,7 +10,8 @@ export default function App() {
   const [text, setText] = useState('');
   const [showModal, setShowModal] = useState(false); // for delete confirmation
 
-  useEffect(() => { if (token) loadTasks(); }, [token]);
+useEffect(() => { 
+  if (token) loadTasks(); }, [token, loadTasks]);
 
   async function loadTasks() {
   try {
