@@ -1,45 +1,54 @@
-// routes/taskRoutes.js
 const express = require('express');
 const auth = require('../middleware/authMiddleware');
 const Task = require('../models/TaskModel');
 
 const router = express.Router();
 
-router.get('/', auth, (req, res) => {
-  Task.getAllByUser(req.user.id, (err, tasks) => {
-    if (err) return res.status(500).json({ error: err.message });
+router.get('/', auth, async (req, res) => {
+  try {
+    const tasks = await Task.getAllByUser(req.user.id);
     res.json(tasks);
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-router.post('/', auth, (req, res) => {
-  const { text } = req.body;
-  Task.create(req.user.id, text, (err, task) => {
-    if (err) return res.status(500).json({ error: err.message });
+router.post('/', auth, async (req, res) => {
+  try {
+    const { text } = req.body;
+    const task = await Task.create(req.user.id, text);
     res.json(task);
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-router.put('/:id', auth, (req, res) => {
-  const { text } = req.body;
-  Task.updateText(req.params.id, req.user.id, text, (err, task) => {
-    if (err) return res.status(500).json({ error: err.message });
+router.put('/:id', auth, async (req, res) => {
+  try {
+    const { text } = req.body;
+    const task = await Task.updateText(req.params.id, req.user.id, text);
     res.json(task);
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-router.post('/:id/toggle', auth, (req, res) => {
-  Task.toggleDone(req.params.id, (err, task) => {
-    if (err) return res.status(500).json({ error: err.message });
+router.post('/:id/toggle', auth, async (req, res) => {
+  try {
+    const task = await Task.toggleDone(req.params.id);
     res.json(task);
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-router.delete('/:id', auth, (req, res) => {
-  Task.delete(req.params.id, req.user.id, (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const result = await Task.delete(req.params.id, req.user.id);
     res.json(result);
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

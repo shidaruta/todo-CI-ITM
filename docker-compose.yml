@@ -1,0 +1,24 @@
+services:
+  backend:
+    build: ./backend
+    container_name: todo-backend
+    ports:
+      - "5000:4000" 
+    environment:
+      - NODE_ENV=development
+      - JWT_SECRET=6ef43f08456fd652447087cce36558b305a545822d9ff82884b4946053e6c1f9
+      - PORT=4000
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - /app/data
+
+  frontend:
+    build: ./frontend
+    container_name: todo-frontend
+    ports:
+      - "3000:5173"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
