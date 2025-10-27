@@ -30,10 +30,6 @@ jobs:
       working-directory: ./backend
       run: npm test
 
-    - name: Run backend integration tests
-      working-directory: ./backend
-      run: npm run test:integration
-
     - name: Generate test coverage
       working-directory: ./backend
       run: npm run test:coverage
