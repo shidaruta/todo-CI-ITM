@@ -1,7 +1,7 @@
-const React = require('react');
-const TaskItem = require('./TaskItem').default;
+import React from 'react';
+import TaskItem from './TaskItem';
 
-function TodoList({ tasks, onToggle, onDelete, onEdit, filter = 'all' }) {
+export default function TodoList({ tasks, onToggle, onDelete, onEdit, filter = 'all' }) {
   const filteredTasks = tasks.filter(task => {
     if (filter === 'completed') return task.done;
     if (filter === 'active') return !task.done;
@@ -26,6 +26,4 @@ function TodoList({ tasks, onToggle, onDelete, onEdit, filter = 'all' }) {
     </div>
   );
 }
-
-module.exports = { default: TodoList };
 

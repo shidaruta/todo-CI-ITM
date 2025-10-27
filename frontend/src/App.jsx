@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AuthForm from './components/AuthForm.jsx';
 import TaskItem from './components/TaskItem.jsx';
 
@@ -13,22 +13,22 @@ export default function App() {
 useEffect(() => { 
   if (token) loadTasks(); }, [token, loadTasks]);
 
-  async function loadTasks() {
-  try {
-    const res = await fetch(`${API}/tasks`, { 
-      headers: { Authorization: 'Bearer ' + token } 
-    });
-    if (!res.ok) throw new Error('Failed to load tasks');
-    const data = await res.json();
-    setTasks(data);
-  } catch (err) {
-    console.error('Error loading tasks:', err);
-    // If token is invalid, logout
-    if (err.message.includes('401') || err.message.includes('Unauthorized')) {
-      logout();
+  const loadTasks = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/tasks`, { 
+        headers: { Authorization: 'Bearer ' + token } 
+      });
+      if (!res.ok) throw new Error('Failed to load tasks');
+      const data = await res.json();
+      setTasks(data);
+    } catch (err) {
+      console.error('Error loading tasks:', err);
+      // If token is invalid, logout
+      if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+        logout();
+      }
     }
-  }
-}
+  }, [token]);
 
   async function addTask(e) {
   e.preventDefault();

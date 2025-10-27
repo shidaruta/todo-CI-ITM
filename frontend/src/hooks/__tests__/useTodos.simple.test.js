@@ -1,5 +1,5 @@
 // Simple test for useTodos hook
-const useTodos = require('../useTodos').default;
+import useTodos from '../useTodos';
 
 describe('useTodos Hook - Simple Tests', () => {
   test('useTodos is a function', () => {
