@@ -1,11 +1,10 @@
 describe('Todos API', () => {
-  let server;
+
   let authToken;
   let userId;
 
-  beforeAll(async () => {
-    server = app.listen(4002);
-    
+
+    beforeAll(async () => {
     // Create a test user and get token
     const signupResponse = await request(app)
       .post('/api/signup')
@@ -14,13 +13,9 @@ describe('Todos API', () => {
         email: 'todo@example.com',
         password: 'Todo123!'
       });
-    
+
     authToken = signupResponse.body.token;
     userId = signupResponse.body.user.id;
-  });
-
-  afterAll((done) => {
-    server.close(done);
   });
 
   describe('POST /api/todos', () => {

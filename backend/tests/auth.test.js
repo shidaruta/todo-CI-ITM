@@ -1,18 +1,9 @@
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
-const app = require('../server');
+const app = require('../app');
 
 describe('Authentication API', () => {
-  let server;
-
-  beforeAll(() => {
-    server = app.listen(4001);
-  });
-
-  afterAll((done) => {
-    server.close(done);
-  });
-
+ 
   describe('POST /api/signup', () => {
     const validUser = {
       username: 'testuser',
