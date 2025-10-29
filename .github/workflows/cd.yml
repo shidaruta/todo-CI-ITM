@@ -1,0 +1,55 @@
+name: CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    branches: [main]
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      # 1️⃣ Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 3️⃣ Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 4️⃣ Build and push combined image
+      - name: Build and push combined image
+        uses: docker/build-push-action@v5
+        with:
+          context: .  # root folder where your Dockerfile is
+          push: true
+          tags: ${{ vars.DOCKER_USERNAME }}/todo-app:latest
+          build-args: |
+            NODE_ENV=production
+
+      # 5️⃣ Deployment summary
+      - name: Deployment summary
+        run: |
+          echo "✅ Combined app image pushed to Docker Hub!"
+          echo "Image: ${{ vars.DOCKER_USERNAME }}/todo-app:latest"

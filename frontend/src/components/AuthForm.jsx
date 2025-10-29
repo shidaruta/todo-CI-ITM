@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const API = 'http://localhost:4000/api';
+const API = 'http://localhost:5000/api';
 
 export default function AuthForm({ onAuth }) {
   const [mode, setMode] = useState('login');

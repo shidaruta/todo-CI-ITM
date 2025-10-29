@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AuthForm from './components/AuthForm.jsx';
 import TaskItem from './components/TaskItem.jsx';
 
-const API = 'http://localhost:4000/api';
+const API = 'http://localhost:5000/api';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -10,26 +10,43 @@ export default function App() {
   const [text, setText] = useState('');
   const [showModal, setShowModal] = useState(false); // for delete confirmation
 
-  useEffect(() => { if (token) loadTasks(); }, [token]);
+useEffect(() => { 
+  if (token) loadTasks(); }, [token, loadTasks]);
 
-  async function loadTasks() {
-    const res = await fetch(`${API}/tasks`, { headers: { Authorization: 'Bearer ' + token } });
-    const data = await res.json();
-    setTasks(data);
-  }
+  const loadTasks = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/tasks`, { 
+        headers: { Authorization: 'Bearer ' + token } 
+      });
+      if (!res.ok) throw new Error('Failed to load tasks');
+      const data = await res.json();
+      setTasks(data);
+    } catch (err) {
+      console.error('Error loading tasks:', err);
+      // If token is invalid, logout
+      if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+        logout();
+      }
+    }
+  }, [token]);
 
   async function addTask(e) {
-    e.preventDefault();
-    if (!text.trim()) return;
+  e.preventDefault();
+  if (!text.trim()) return;
+  try {
     const res = await fetch(`${API}/tasks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
       body: JSON.stringify({ text }),
     });
+    if (!res.ok) throw new Error('Failed to add task');
     const data = await res.json();
     setTasks([data, ...tasks]);
     setText('');
+  } catch (err) {
+    console.error('Error adding task:', err);
   }
+}
 
   async function toggleTask(id) {
     const res = await fetch(`${API}/tasks/${id}/toggle`, { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
