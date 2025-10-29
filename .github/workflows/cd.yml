@@ -48,7 +48,7 @@ jobs:
           build-args: |
             NODE_ENV=production
 
-      # 5️⃣ Deployment summary
+      # 5️⃣ Deployment summar
       - name: Deployment summary
         run: |
           echo "✅ Combined app image pushed to Docker Hub!"
